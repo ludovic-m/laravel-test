@@ -1,0 +1,37 @@
+name: Docker Image CI
+
+on:
+  push:
+    tags:
+      - 'hello-world-v*'
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.1.1
+
+    - name: Docker Metadata action
+      uses: docker/metadata-action@v4.3.0
+      id: metadata
+      with:
+        images: ${{ vars.NAME_DOCKER_REGISTRY}}/${{ vars.NAME_DOCKER_IMAGE_LARAVEL_HELLO_WORLD}}
+        tags: |
+          type=match,pattern=\d+.\d+.\d+
+
+    - name: Login to Azure Container Registry
+      uses: docker/login-action@v3.0.0
+      with:
+        registry: ${{ vars.NAME_DOCKER_REGISTRY}}
+        username: ${{ secrets.REGISTRY_USERNAME}}
+        password: ${{ secrets.REGISTRY_PASSWORD}}
+
+    - name: Build & Push Docker image to registry
+      uses: docker/build-push-action@v5.1.0
+      with:
+        push: true
+        context: .
+        tags: ${{ steps.metadata.outputs.tags }}
+        labels: ${{ steps.metadata.outputs.labels }}
